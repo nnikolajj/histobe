@@ -17,14 +17,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // wichtig für POST-Requests mit JSON
+                .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/histo/**").permitAll() // alles unter /histo erlaubt
-                        .anyRequest().permitAll() // alle anderen auch (nur für Dev)
+                        .requestMatchers("/histo/**").permitAll()
+                        .anyRequest().authenticated()
                 )
-                .formLogin(form -> form.disable()) // Loginseite deaktivieren
-                .httpBasic(basic -> basic.disable()); // Basic Auth deaktivieren
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable());
 
         return http.build();
     }
@@ -32,8 +32,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+
         configuration.addAllowedOrigin("http://localhost:3000");
-        configuration.addAllowedOrigin("https://histoguessrfe.onrender.com/");
+        configuration.addAllowedOrigin("https://histoguessrfe.onrender.com");
+
         configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true);
@@ -43,6 +45,3 @@ public class SecurityConfig {
         return source;
     }
 }
-
-
-
