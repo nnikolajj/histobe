@@ -1,7 +1,10 @@
 package histoguessr.histobe;
 
+import histoguessr.histobe.Entity.HistoEntity;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import java.util.HashMap;
 
 @SpringBootApplication
 public class HistobeApplication {
@@ -9,5 +12,7 @@ public class HistobeApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(HistobeApplication.class, args);
 	}
+
+
 
 }
