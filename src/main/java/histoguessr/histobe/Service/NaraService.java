@@ -3,8 +3,10 @@ package histoguessr.histobe.Service;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import histoguessr.histobe.Entity.HistoEntity;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.ObjectNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +19,9 @@ import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 @Slf4j
@@ -26,6 +31,7 @@ public class NaraService {
     private final WebClient webClient;
     private final HandlerMapping resourceHandlerMapping;
     private Logger logger = LoggerFactory.getLogger(NaraService.class);
+    private int rekursion = 0;
 
     /**
      * Initialisiert den WebClient mit der Basis-URL und dem geheimen API Key im Header.
@@ -52,12 +58,17 @@ public class NaraService {
      */
     public HistoEntity searchRecordsWithImages(String query) {
 
+        Random random = new Random();
+        int min = 530708;
+        int max = 531472;
+        int id = random.nextInt(max-min) + min;
+
         String rawResponse;
 
         Mono<String> mongo = webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/records/search")
-                        .queryParam("naId_is", "530726")
+                        .queryParam("naId_is", id)
                         .queryParam("includeExtractedText", "true")
                         .queryParam("limit", "1")
                         .build())
@@ -96,7 +107,16 @@ public class NaraService {
 
     }
         logger.error("URL wasnt found");
-        return "";
+
+        if (rekursion <= 4){
+            rekursion++;
+            searchRecordsWithImages("BildProblem");
+        }
+        else {
+            throw new EntityNotFoundException("Can't find Nara Picture");
+        }
+
+        return "picture not found";
     }
 
     private int getYear(String response) {
@@ -114,17 +134,32 @@ public class NaraService {
         List<Map<String, Object>> yearJson = gson.fromJson(prodDate, listType);
 
         if (yearJson.isEmpty()) {
-            String jahrTitle = StringUtils.substringBetween(response, beginMarkerTitle, endMarkerTitle);
-            jahrTitle = jahrTitle.replace("[^1-9]{4}", "");
+            String title = StringUtils.substringBetween(response, beginMarkerTitle, endMarkerTitle);
 
-            logger.info("Title Date {}", jahrTitle);
+            Pattern pattern = Pattern.compile("\\b1\\d{3}\\b");
+            Matcher matcher = pattern.matcher(title);
 
-            return Integer.parseInt(jahrTitle);
+            if (matcher.find()) {
+                String yearTitle = matcher.group();
+                logger.info("Title Date {}", yearTitle);
+                return Integer.parseInt(yearTitle);
+            }
+
+        }else {
+            String year = yearJson.get(0).get("year").toString();
+
+            logger.info("Production Date {}", year);
+            return (int) Double.parseDouble(year);
         }
 
-        String year = yearJson.get(0).get("year").toString();
+        if (rekursion <= 4){
+            rekursion++;
+            searchRecordsWithImages("JahrProblem");
+        }
+        else {
+            throw new EntityNotFoundException("Can't find Nara Picture with a year");
+        }
 
-        logger.info("Production Date {}", year);
-        return (int) Double.parseDouble(year);
+        return 0;
     }
 }
