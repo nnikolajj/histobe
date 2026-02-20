@@ -3,12 +3,14 @@ package histoguessr.histobe.Service;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import histoguessr.histobe.Entity.HistoEntity;
+import histoguessr.histobe.PointsValidation.PointsValidation;
+import histoguessr.histobe.PointsValidation.ValidationRequest;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.ObjectNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -32,6 +34,10 @@ public class NaraService {
     private final HandlerMapping resourceHandlerMapping;
     private Logger logger = LoggerFactory.getLogger(NaraService.class);
     private int rekursion = 0;
+    private int year = 0;
+
+    private final PointsValidation pointsValidation = new PointsValidation();
+
 
     /**
      * Initialisiert den WebClient mit der Basis-URL und dem geheimen API Key im Header.
@@ -86,6 +92,7 @@ public class NaraService {
         assert rawResponse != null;
         String photoLink = getPhotoUrl(rawResponse);
         int year = getYear(rawResponse);
+        this.year = year;
 
         return new HistoEntity().setPicture(photoLink).setDate(LocalDate.of(year, 1, 1));
     }
@@ -161,5 +168,14 @@ public class NaraService {
         }
 
         return 0;
+    }
+
+    public int getPoints(long id, ValidationRequest validation) {
+        HistoEntity histo = new HistoEntity();
+        histo.setDate(LocalDate.of(year, 1, 1));
+
+        logger.info("Get Pointsvalidation for Histo with id {}", id);
+
+        return pointsValidation.validatePoints(histo, validation);
     }
 }

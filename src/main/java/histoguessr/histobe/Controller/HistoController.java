@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
+@RequestMapping("/histo")
 public class HistoController {
 
     Logger logger = LoggerFactory.getLogger(HistoController.class.getName());
@@ -19,19 +20,19 @@ public class HistoController {
     private HistoService service;
 
 
-    @GetMapping("/histo/{id}")
+    @GetMapping("/{id}")
     public HistoEntity getHisto(@PathVariable int id) {
         logger.info("Get Histo with id {}", id);
         return service.getHisto(id);
     }
 
-    @GetMapping("/histo/any")
+    @GetMapping("/any")
     public HistoEntity getHisto() {
         logger.info("Get Random Histo");
         return service.getHisto();
     }
 
-    @PostMapping("/histo/{id}/validation")
+    @PostMapping("/{id}/validation")
     public int validatePoints(@PathVariable int id, @RequestBody ValidationRequest validationRequest) {
         logger.info( "Get Points with id {} mit daten: {} | {}", id, validationRequest.getPlace(), validationRequest.getYear());
         return service.getPoints(id, validationRequest);
