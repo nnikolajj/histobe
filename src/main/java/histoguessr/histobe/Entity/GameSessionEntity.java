@@ -1,40 +1,31 @@
 package histoguessr.histobe.Entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-
+import java.util.UUID;
 
 @Entity
-@Table(name = "HistoryObject")
 @Getter
 @Setter
-@Data
 @Accessors(chain = true)
-public class HistoEntity {
+@Table(name = "GameSession")
+public class GameSessionEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(columnDefinition = "text")
-    private String picture;
+    private long histoId;
+    private Integer year;
+    private LocalDate date;
+    private Double latitude;
+    private Double longitude;
 
-    LocalDate date;
-
-    LocalDate endDate;
-
-    String place;
-
-    String category;
-
-    String description;
-
-    String title;
-
+    private LocalDateTime createdAt = LocalDateTime.now();
+    private boolean solved = false;
 }

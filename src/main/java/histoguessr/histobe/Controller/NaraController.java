@@ -30,9 +30,9 @@ public class NaraController {
         return naraService.searchRecordsWithImages(q);
     }
 
-    @PostMapping("/{id}/validation")
+    @PostMapping("/histo/{id}/validation")
     public int validatePoints(@PathVariable int id, @RequestBody ValidationRequest validationRequest) {
-        logger.info("Get Points with id {} mit daten: {} | {}", id, validationRequest.getPlace(), validationRequest.getYear());
+        logger.info("Get Nara Points with Id {} and place|year: {} | {}", id, validationRequest.getPlace(), validationRequest.getYear());
         return naraService.getPoints(id, validationRequest);
     }
 }

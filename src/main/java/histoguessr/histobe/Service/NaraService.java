@@ -2,6 +2,7 @@ package histoguessr.histobe.Service;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import histoguessr.histobe.Entity.GameSessionEntity;
 import histoguessr.histobe.Entity.HistoEntity;
 import histoguessr.histobe.PointsValidation.PointsValidation;
 import histoguessr.histobe.PointsValidation.ValidationRequest;
@@ -38,11 +39,15 @@ public class NaraService {
 
     private final PointsValidation pointsValidation = new PointsValidation();
 
+    @Autowired
+    GameSessionService gameSessionService;
+
 
     /**
      * Initialisiert den WebClient mit der Basis-URL und dem geheimen API Key im Header.
+     *
      * @param builder Der WebClient.Builder (wird von Spring injiziert).
-     * @param apiKey Der API Key, geladen aus application.properties.
+     * @param apiKey  Der API Key, geladen aus application.properties.
      */
     public NaraService(WebClient.Builder builder,
                        @Value("${nara.api.key}") String apiKey, HandlerMapping resourceHandlerMapping) {
@@ -67,7 +72,7 @@ public class NaraService {
         Random random = new Random();
         int min = 530708;
         int max = 531472;
-        int id = random.nextInt(max-min) + min;
+        int id = random.nextInt(max - min) + min;
 
         String rawResponse;
 
@@ -83,18 +88,22 @@ public class NaraService {
                         response -> Mono.error(new RuntimeException("NARA API Error: " + response.statusCode())))
                 .bodyToMono(String.class);
 
-        mongo.subscribe(value -> System.out.println(value),
+        mongo.subscribe(value -> System.out.println(),
                 Throwable::printStackTrace,
                 () -> System.out.println("completed without a value"));
 
         rawResponse = mongo.block();
 
         assert rawResponse != null;
+
         String photoLink = getPhotoUrl(rawResponse);
         int year = getYear(rawResponse);
-        this.year = year;
 
-        return new HistoEntity().setPicture(photoLink).setDate(LocalDate.of(year, 1, 1));
+        HistoEntity histo = new HistoEntity().setPicture(photoLink).setDate(LocalDate.of(year, 1, 1)).setId((long) id);
+
+        gameSessionService.saveGameSession(histo);
+
+        return histo;
     }
 
     private String getPhotoUrl(String response) {
@@ -112,14 +121,13 @@ public class NaraService {
                 return response.substring(urlStartIndex, urlEndIndex);
             }
 
-    }
+        }
         logger.error("URL wasnt found");
 
-        if (rekursion <= 4){
+        if (rekursion <= 4) {
             rekursion++;
             searchRecordsWithImages("BildProblem");
-        }
-        else {
+        } else {
             throw new EntityNotFoundException("Can't find Nara Picture");
         }
 
@@ -136,11 +144,12 @@ public class NaraService {
         String prodDate = StringUtils.substringBetween(response, beginMarker, endMarker);
 
         Gson gson = new Gson();
-        Type listType = new TypeToken<List<Map<String, Object>>>(){}.getType();
+        Type listType = new TypeToken<List<Map<String, Object>>>() {
+        }.getType();
 
         List<Map<String, Object>> yearJson = gson.fromJson(prodDate, listType);
 
-        if (yearJson.isEmpty()) {
+        if (yearJson == null || yearJson.isEmpty()) {
             String title = StringUtils.substringBetween(response, beginMarkerTitle, endMarkerTitle);
 
             Pattern pattern = Pattern.compile("\\b1\\d{3}\\b");
@@ -152,18 +161,17 @@ public class NaraService {
                 return Integer.parseInt(yearTitle);
             }
 
-        }else {
+        } else {
             String year = yearJson.get(0).get("year").toString();
 
             logger.info("Production Date {}", year);
             return (int) Double.parseDouble(year);
         }
 
-        if (rekursion <= 4){
+        if (rekursion <= 4) {
             rekursion++;
             searchRecordsWithImages("JahrProblem");
-        }
-        else {
+        } else {
             throw new EntityNotFoundException("Can't find Nara Picture with a year");
         }
 
@@ -172,9 +180,10 @@ public class NaraService {
 
     public int getPoints(long id, ValidationRequest validation) {
         HistoEntity histo = new HistoEntity();
-        histo.setDate(LocalDate.of(year, 1, 1));
+        GameSessionEntity gameSessionEntity = gameSessionService.getGameSession(id);
+        histo.setDate(gameSessionEntity.getDate());
 
-        logger.info("Get Pointsvalidation for Histo with id {}", id);
+        logger.info("Get Pointsvalidation for Nara Histo with id {}", id);
 
         return pointsValidation.validatePoints(histo, validation);
     }

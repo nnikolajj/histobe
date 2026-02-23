@@ -12,20 +12,21 @@ public class PointsValidation {
     int placePoints = 0;
     int timePoints = 0;
 
-   PlacePointsValidation placeValidation = new PlacePointsValidation();
-   TimePointsValidation timeValidation = new TimePointsValidation();
+    PlacePointsValidation placeValidation = new PlacePointsValidation();
+    TimePointsValidation timeValidation = new TimePointsValidation();
 
     public int validatePoints(HistoEntity histo, ValidationRequest validation) {
 
-        if (!histo.getPlace().isBlank() || !histo.getPlace().isEmpty()){
-           placePoints = placeValidation.validatePlace(histo.getPlace(), validation.getPlace());
+        if (histo.getPlace() != null) {
+            if (!histo.getPlace().isBlank() || !histo.getPlace().isEmpty()) {
+                placePoints = placeValidation.validatePlace(histo.getPlace(), validation.getPlace());
+            }
         }
 
-        if (histo.getDate() != null){
+        if (histo.getDate() != null) {
             if (histo.getEndDate() != null) {
                 timePoints = timeValidation.validateEndTime(histo.getDate().getYear(), validation.getYear(), histo.getEndDate().getYear());
-            }
-            else {
+            } else {
                 timePoints = timeValidation.validateTime(histo.getDate().getYear(), validation.getYear());
             }
         }
