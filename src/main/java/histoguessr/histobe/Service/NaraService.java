@@ -35,7 +35,6 @@ public class NaraService {
     private final HandlerMapping resourceHandlerMapping;
     private Logger logger = LoggerFactory.getLogger(NaraService.class);
     private int rekursion = 0;
-    private int year = 0;
 
     private final PointsValidation pointsValidation = new PointsValidation();
 
@@ -98,6 +97,8 @@ public class NaraService {
 
         String photoLink = getPhotoUrl(rawResponse);
         int year = getYear(rawResponse);
+
+        rekursion = 0;
 
         HistoEntity histo = new HistoEntity().setPicture(photoLink).setDate(LocalDate.of(year, 1, 1)).setId((long) id);
 
@@ -179,12 +180,20 @@ public class NaraService {
     }
 
     public int getPoints(long id, ValidationRequest validation) {
-        HistoEntity histo = new HistoEntity();
-        GameSessionEntity gameSessionEntity = gameSessionService.getGameSession(id);
-        histo.setDate(gameSessionEntity.getDate());
+        HistoEntity histo = getHistoByGameSession(id);
 
         logger.info("Get Pointsvalidation for Nara Histo with id {}", id);
 
         return pointsValidation.validatePoints(histo, validation);
+    }
+
+    public HistoEntity getHistoByGameSession(long id) {
+        HistoEntity histo = new HistoEntity();
+        GameSessionEntity gameSessionEntity = gameSessionService.getGameSession(id);
+        histo.setDate(gameSessionEntity.getDate());
+        histo.setPlace(gameSessionEntity.getPlace());
+        histo.setPicture(gameSessionEntity.getImageUrl());
+
+        return histo;
     }
 }

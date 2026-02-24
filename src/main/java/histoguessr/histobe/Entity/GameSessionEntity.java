@@ -21,10 +21,10 @@ public class GameSessionEntity {
     private Long id;
 
     private long histoId;
+    private String imageUrl;
     private Integer year;
     private LocalDate date;
-    private Double latitude;
-    private Double longitude;
+    private String place;
 
     private LocalDateTime createdAt = LocalDateTime.now();
     private boolean solved = false;
