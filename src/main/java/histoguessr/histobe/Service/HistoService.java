@@ -43,5 +43,20 @@ public class HistoService {
 
        return pointsValidation.validatePoints(histo, validation);
     }
+
+    public long saveHisto(HistoEntity histo) {
+        histo.setId(null);
+
+        if (histo.getDate() != null && histo.getPlace() != null) {
+            histo.setCategory("2");
+        }
+        else if (histo.getPlace() == null) {
+            histo.setCategory("2");
+        }
+
+        HistoEntity savedHisto = repository.save(histo);
+
+        return savedHisto.getId();
+    }
 }
 

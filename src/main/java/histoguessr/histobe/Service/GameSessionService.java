@@ -14,11 +14,16 @@ public class GameSessionService {
 
     @Async
     public void saveGameSession(HistoEntity histo) {
-        GameSessionEntity gameSession = new GameSessionEntity().setDate(histo.getDate()).setHistoId(histo.getId()).setPlace(histo.getPlace()).setImageUrl(histo.getPicture());
+        GameSessionEntity gameSession = new GameSessionEntity().setDate(histo.getDate()).setHistoId(histo.getId()).setPlace(histo.getPlace()).setImageUrl(histo.getPicture()).setTitle(histo.getTitle());
         repository.save(gameSession);
     }
 
     public GameSessionEntity getGameSession(long id) {
         return repository.findGameSessionByHistoId(id);
     }
+
+    public void deleteGameSession(long id) {
+        repository.deleteById(id);
+    }
+
 }

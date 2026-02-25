@@ -35,8 +35,16 @@ public class NaraController {
     }
 
     @GetMapping("/histo/{id}")
-    public HistoEntity validatePoints(@PathVariable int id) {
+    public HistoEntity getNaraHistoWithId(@PathVariable int id) {
         logger.info("Get Nara Entity with Id {}", id);
-        return naraService.getHistoByGameSession(id);
+        HistoEntity histo = naraService.getHistoByGameSession(id);
+       // naraService.deleteNaraHisto(id);
+        return histo;
+    }
+
+    @PostMapping("/saveHisto/{id}")
+    public int saveHisto(@PathVariable long id) {
+        logger.info("Save Nara Entity with Id {}", id);
+        return Math.toIntExact(naraService.saveNaraHisto(id));
     }
 }

@@ -22,6 +22,7 @@ public class GameSessionEntity {
 
     private long histoId;
     private String imageUrl;
+    private String title;
     private Integer year;
     private LocalDate date;
     private String place;

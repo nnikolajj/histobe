@@ -41,6 +41,9 @@ public class NaraService {
     @Autowired
     GameSessionService gameSessionService;
 
+    @Autowired
+    HistoService histoService;
+
 
     /**
      * Initialisiert den WebClient mit der Basis-URL und dem geheimen API Key im Header.
@@ -100,7 +103,7 @@ public class NaraService {
 
         rekursion = 0;
 
-        HistoEntity histo = new HistoEntity().setPicture(photoLink).setDate(LocalDate.of(year, 1, 1)).setId((long) id);
+        HistoEntity histo = new HistoEntity().setPicture(photoLink).setDate(LocalDate.of(year, 1, 1)).setId((long) id).setTitle(getTitle(rawResponse));
 
         gameSessionService.saveGameSession(histo);
 
@@ -135,12 +138,22 @@ public class NaraService {
         return "picture not found";
     }
 
+    private String getTitle(String response) {
+        String beginMarker = "title\":\"";
+        String endMarker = "\",";
+
+        String title = StringUtils.substringBetween(response, beginMarker, endMarker);
+
+        if (title.startsWith("/\"") && title.startsWith("\"/")) {
+            title = StringUtils.substring(title, 1, title.length()-2);
+        }
+
+        return title;
+    }
+
     private int getYear(String response) {
         String beginMarker = "productionDates\":";
         String endMarker = ",\"variantControlNumbers";
-
-        String beginMarkerTitle = "title\":";
-        String endMarkerTitle = "\",\"";
 
         String prodDate = StringUtils.substringBetween(response, beginMarker, endMarker);
 
@@ -151,10 +164,9 @@ public class NaraService {
         List<Map<String, Object>> yearJson = gson.fromJson(prodDate, listType);
 
         if (yearJson == null || yearJson.isEmpty()) {
-            String title = StringUtils.substringBetween(response, beginMarkerTitle, endMarkerTitle);
 
             Pattern pattern = Pattern.compile("\\b1\\d{3}\\b");
-            Matcher matcher = pattern.matcher(title);
+            Matcher matcher = pattern.matcher(getTitle(response));
 
             if (matcher.find()) {
                 String yearTitle = matcher.group();
@@ -179,21 +191,36 @@ public class NaraService {
         return 0;
     }
 
-    public int getPoints(long id, ValidationRequest validation) {
-        HistoEntity histo = getHistoByGameSession(id);
+    public int getPoints(long naraId, ValidationRequest validation) {
+        HistoEntity histo = getHistoByGameSession(naraId);
 
-        logger.info("Get Pointsvalidation for Nara Histo with id {}", id);
+        logger.info("Get Pointsvalidation for Nara Histo with id {}", naraId);
 
         return pointsValidation.validatePoints(histo, validation);
     }
 
-    public HistoEntity getHistoByGameSession(long id) {
+    public HistoEntity getHistoByGameSession(long naraId) {
         HistoEntity histo = new HistoEntity();
-        GameSessionEntity gameSessionEntity = gameSessionService.getGameSession(id);
+        GameSessionEntity gameSessionEntity = gameSessionService.getGameSession(naraId);
         histo.setDate(gameSessionEntity.getDate());
         histo.setPlace(gameSessionEntity.getPlace());
         histo.setPicture(gameSessionEntity.getImageUrl());
+        histo.setTitle(gameSessionEntity.getTitle());
+        histo.setId(gameSessionEntity.getHistoId());
 
         return histo;
+    }
+
+    public long saveNaraHisto(long naraId) {
+        HistoEntity histo = getHistoByGameSession(naraId);
+        long id = histoService.saveHisto(histo);
+
+        logger.info("Saved Nara Histo with id {}", id);
+
+        return id;
+    }
+
+    public void deleteNaraHisto(long naraId) {
+        gameSessionService.deleteGameSession(gameSessionService.getGameSession(naraId).getId());
     }
 }
