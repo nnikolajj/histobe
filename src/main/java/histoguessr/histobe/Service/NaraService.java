@@ -20,6 +20,7 @@ import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Type;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -32,6 +33,7 @@ import java.util.regex.Pattern;
 public class NaraService {
 
     private final WebClient webClient;
+    private final WebClient photonWebClient;
     private final HandlerMapping resourceHandlerMapping;
     private Logger logger = LoggerFactory.getLogger(NaraService.class);
     private int rekursion = 0;
@@ -43,6 +45,9 @@ public class NaraService {
 
     @Autowired
     HistoService histoService;
+
+    @Autowired
+    NerLocationService nerLocationService;
 
 
     /**
@@ -57,8 +62,10 @@ public class NaraService {
         // Setzt die Basis-URL auf den API-Wurzelpfad
         this.webClient = builder
                 .baseUrl("https://catalog.archives.gov/api/v2")
-                // Fügt den geheimen API Key als Header hinzu (für jede Anfrage)
                 .defaultHeader("x-api-key", apiKey)
+                .build();
+        this.photonWebClient = builder.baseUrl("https://photon.komoot.io/")
+                .defaultHeader("User-Agent", "Mozilla/5.0 (compatible; HistoryGame/1.0)")
                 .build();
         this.resourceHandlerMapping = resourceHandlerMapping;
     }
@@ -95,19 +102,65 @@ public class NaraService {
                 () -> System.out.println("completed without a value"));
 
         rawResponse = mongo.block();
-
         assert rawResponse != null;
 
         String photoLink = getPhotoUrl(rawResponse);
         int year = getYear(rawResponse);
+        String title = getTitle(rawResponse);
+        String location = getLocation(title);
+        String category;
+
+        if (location.length() >= 2){
+            category = "2";
+        }
+        else {
+            category = "3";
+        }
 
         rekursion = 0;
 
-        HistoEntity histo = new HistoEntity().setPicture(photoLink).setDate(LocalDate.of(year, 1, 1)).setId((long) id).setTitle(getTitle(rawResponse));
-
+        HistoEntity histo = new HistoEntity()
+                .setPicture(photoLink)
+                .setDate(LocalDate.of(year, 1, 1))
+                .setId((long) id).setTitle(title)
+                .setPlace(location)
+                .setCategory(category);
         gameSessionService.saveGameSession(histo);
+        return histo;
+    }
+
+    public int getPoints(long naraId, ValidationRequest validation) {
+        HistoEntity histo = getHistoByGameSession(naraId);
+
+        logger.info("Get Pointsvalidation for Nara Histo with id {}", naraId);
+
+        return pointsValidation.validatePoints(histo, validation);
+    }
+
+    public HistoEntity getHistoByGameSession(long naraId) {
+        HistoEntity histo = new HistoEntity();
+        GameSessionEntity gameSessionEntity = gameSessionService.getGameSession(naraId);
+        histo.setDate(gameSessionEntity.getDate());
+        histo.setPlace(gameSessionEntity.getPlace());
+        histo.setPicture(gameSessionEntity.getImageUrl());
+        histo.setTitle(gameSessionEntity.getTitle());
+        histo.setId(gameSessionEntity.getHistoId());
+        histo.setCategory(gameSessionEntity.getCategory());
 
         return histo;
+    }
+
+    public long saveNaraHisto(long naraId) {
+        HistoEntity histo = getHistoByGameSession(naraId);
+        long id = histoService.saveHisto(histo);
+
+        logger.info("Saved Nara Histo with id {}", id);
+
+        return id;
+    }
+
+    public void deleteNaraHisto(long naraId) {
+        gameSessionService.deleteGameSession(gameSessionService.getGameSession(naraId).getId());
     }
 
     private String getPhotoUrl(String response) {
@@ -122,6 +175,9 @@ public class NaraService {
             int urlEndIndex = response.indexOf(endMarker, urlStartIndex);
 
             if (urlEndIndex != -1) {
+
+                System.out.println(response.substring(urlStartIndex, urlEndIndex));
+
                 return response.substring(urlStartIndex, urlEndIndex);
             }
 
@@ -130,8 +186,10 @@ public class NaraService {
 
         if (rekursion <= 4) {
             rekursion++;
+            System.out.println("rekursion: " + rekursion);
             searchRecordsWithImages("BildProblem");
         } else {
+            System.out.println("Fertig rekursiert " + rekursion);
             throw new EntityNotFoundException("Can't find Nara Picture");
         }
 
@@ -145,7 +203,7 @@ public class NaraService {
         String title = StringUtils.substringBetween(response, beginMarker, endMarker);
 
         if (title.startsWith("/\"") && title.startsWith("\"/")) {
-            title = StringUtils.substring(title, 1, title.length()-2);
+            title = StringUtils.substring(title, 1, title.length() - 2);
         }
 
         return title;
@@ -191,36 +249,43 @@ public class NaraService {
         return 0;
     }
 
-    public int getPoints(long naraId, ValidationRequest validation) {
-        HistoEntity histo = getHistoByGameSession(naraId);
+    private String getCoordinatesWithPhotonByString(String query) {
 
-        logger.info("Get Pointsvalidation for Nara Histo with id {}", naraId);
+        String cleanQuery = query.replaceAll("\\b\\d{4}\\b", "").trim();
 
-        return pointsValidation.validatePoints(histo, validation);
+        if (!cleanQuery.isEmpty()) {
+            Map location = photonWebClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("api/")
+                            .queryParam("q", cleanQuery)
+                            .queryParam("limit", 1)
+                            .build())
+                    .retrieve()
+                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                            response -> Mono.error(new RuntimeException("Photon API Error: " + response.statusCode())))
+                    .bodyToMono(Map.class).block();
+
+            List<Map<String, Object>> features = (List<Map<String, Object>>) location.get("features");
+
+            if (features != null && !features.isEmpty()) {
+                LinkedHashMap<String, Object> geometry = (LinkedHashMap<String, Object>) features.get(0).get("geometry");
+
+                if (geometry != null && !geometry.isEmpty()) {
+                    List<Double> coordinates = (List<Double>) geometry.get("coordinates");
+                        String formattedCordsLong = String.format("%.2f", coordinates.get(0));
+                        String formattedCordsLat = String.format("%.2f", coordinates.get(1));
+
+                    return (formattedCordsLong + ", " + formattedCordsLat);
+                }
+            }
+        }
+        return "";
     }
 
-    public HistoEntity getHistoByGameSession(long naraId) {
-        HistoEntity histo = new HistoEntity();
-        GameSessionEntity gameSessionEntity = gameSessionService.getGameSession(naraId);
-        histo.setDate(gameSessionEntity.getDate());
-        histo.setPlace(gameSessionEntity.getPlace());
-        histo.setPicture(gameSessionEntity.getImageUrl());
-        histo.setTitle(gameSessionEntity.getTitle());
-        histo.setId(gameSessionEntity.getHistoId());
 
-        return histo;
-    }
+    private String getLocation(String title) {
+        String foundPlaces = nerLocationService.extractLocations(title);
 
-    public long saveNaraHisto(long naraId) {
-        HistoEntity histo = getHistoByGameSession(naraId);
-        long id = histoService.saveHisto(histo);
-
-        logger.info("Saved Nara Histo with id {}", id);
-
-        return id;
-    }
-
-    public void deleteNaraHisto(long naraId) {
-        gameSessionService.deleteGameSession(gameSessionService.getGameSession(naraId).getId());
+        return getCoordinatesWithPhotonByString(foundPlaces);
     }
 }

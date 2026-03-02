@@ -51,7 +51,7 @@ public class HistoService {
             histo.setCategory("2");
         }
         else if (histo.getPlace() == null) {
-            histo.setCategory("2");
+            histo.setCategory("3");
         }
 
         HistoEntity savedHisto = repository.save(histo);

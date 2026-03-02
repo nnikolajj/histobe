@@ -14,7 +14,14 @@ public class GameSessionService {
 
     @Async
     public void saveGameSession(HistoEntity histo) {
-        GameSessionEntity gameSession = new GameSessionEntity().setDate(histo.getDate()).setHistoId(histo.getId()).setPlace(histo.getPlace()).setImageUrl(histo.getPicture()).setTitle(histo.getTitle());
+        GameSessionEntity gameSession = new GameSessionEntity()
+                .setDate(histo.getDate())
+                .setHistoId(histo.getId())
+                .setPlace(histo.getPlace())
+                .setImageUrl(histo.getPicture())
+                .setTitle(histo.getTitle())
+                .setPlace(histo.getPlace())
+                .setCategory(histo.getCategory());
         repository.save(gameSession);
     }
 

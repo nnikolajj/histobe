@@ -9,18 +9,17 @@ public class PlacePointsValidation {
     Logger logger = LoggerFactory.getLogger(PlacePointsValidation.class);
 
     public int validatePlace(String histoPlace, String validationPlace){
-        if (histoPlace.matches("^-?\\d+(\\.\\d+)?,\\s*-?\\d+(\\.\\d+)?$")){
+        if (histoPlace.trim().matches("^-?\\d+(\\.\\d+)?,\\s*-?\\d+(\\.\\d+)?$")){
             double[] coordinates = Arrays.stream(histoPlace.split(", "))
                     .mapToDouble(Double::parseDouble).toArray();
 
             double [] validationCoordinates = Arrays.stream(validationPlace.split(", "))
                     .mapToDouble(Double::parseDouble).toArray();
 
+            double longPoints = Math.abs(coordinates[0] - Math.abs(validationCoordinates[1]));
+            double latPoints = Math.abs(coordinates[1] - Math.abs(validationCoordinates[0]));
 
-            double latPoints = Math.abs(coordinates[0]) - Math.abs(validationCoordinates[0]);
-            double lonPoints = Math.abs(coordinates[1] - Math.abs(validationCoordinates[1]));
-
-            double distance = Math.sqrt(Math.abs(latPoints) * Math.abs(latPoints) + Math.abs(lonPoints) * Math.abs(lonPoints));
+            double distance = Math.sqrt(Math.abs(latPoints) * Math.abs(latPoints) + Math.abs(longPoints) * Math.abs(longPoints));
 
             int placePoints = 25000;
 

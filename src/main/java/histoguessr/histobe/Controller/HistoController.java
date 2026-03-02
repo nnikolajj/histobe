@@ -34,7 +34,7 @@ public class HistoController {
 
     @PostMapping("/{id}/validation")
     public int validatePoints(@PathVariable int id, @RequestBody ValidationRequest validationRequest) {
-        logger.info( "Get Points with id {} mit daten: {} | {}", id, validationRequest.getPlace(), validationRequest.getYear());
+        logger.info( "Get Points with id {} with values: {} | {}", id, validationRequest.getPlace(), validationRequest.getYear());
         return service.getPoints(id, validationRequest);
     }
 }

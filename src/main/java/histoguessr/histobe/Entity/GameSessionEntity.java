@@ -7,7 +7,6 @@ import lombok.experimental.Accessors;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Getter
@@ -26,6 +25,7 @@ public class GameSessionEntity {
     private Integer year;
     private LocalDate date;
     private String place;
+    private String category;
 
     private LocalDateTime createdAt = LocalDateTime.now();
     private boolean solved = false;
