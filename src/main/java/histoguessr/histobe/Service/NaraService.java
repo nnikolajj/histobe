@@ -202,7 +202,7 @@ public class NaraService {
 
         String title = StringUtils.substringBetween(response, beginMarker, endMarker);
 
-        if (title.startsWith("/\"") && title.startsWith("\"/")) {
+        if (title.startsWith("\\\"") && title.startsWith("\"\\")) {
             title = StringUtils.substring(title, 1, title.length() - 2);
         }
 
