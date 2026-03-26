@@ -36,7 +36,7 @@ public class GameService {
         List<String> enities = new ArrayList<>();
 
         if (HISTO.getType() == type) {
-            for (int i = 0; i< 5; i++){
+            for (int i = 0; i < 5; i++){
                 enities.add(histoService.getHisto().getId().toString());
             }
         }

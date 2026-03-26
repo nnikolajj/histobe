@@ -22,6 +22,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/histo/**").permitAll()
                         .requestMatchers("api/nara/**").permitAll()
+                        .requestMatchers("/game/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())

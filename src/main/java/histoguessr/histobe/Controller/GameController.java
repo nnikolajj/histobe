@@ -18,7 +18,7 @@ public class GameController {
     @Autowired
     private GameService service;
 
-    @GetMapping("/{type}")
+    @PostMapping("/seed/{type}")
     public GameSeed startGame(@PathVariable short type) {
         logger.info("Generate Seed with type {}", type);
         return service.generateSeed(type);

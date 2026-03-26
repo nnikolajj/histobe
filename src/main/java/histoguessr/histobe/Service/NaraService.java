@@ -110,6 +110,8 @@ public class NaraService {
         String location = getLocation(title);
         String category;
 
+        title = StringUtils.substring(title, 100, title.length());
+
         if (location.length() >= 2){
             category = "2";
         }
@@ -125,7 +127,13 @@ public class NaraService {
                 .setId((long) id).setTitle(title)
                 .setPlace(location)
                 .setCategory(category);
+
+        logger.info("Saving (nara) histo in gamesession with values: {}", histo.toString());
+
         gameSessionService.saveGameSession(histo);
+
+        System.out.println("not found" + histo.getId() + " " + histo.getPicture());
+
         return histo;
     }
 
@@ -176,13 +184,14 @@ public class NaraService {
 
             if (urlEndIndex != -1) {
 
-                System.out.println(response.substring(urlStartIndex, urlEndIndex));
+                System.out.println("nutte: " + response.substring(urlStartIndex, urlEndIndex));
 
                 return response.substring(urlStartIndex, urlEndIndex);
             }
 
         }
-        logger.error("URL wasnt found");
+
+        logger.error("URL wasnt found, rekursion: " + rekursion);
 
         if (rekursion <= 4) {
             rekursion++;
@@ -193,7 +202,9 @@ public class NaraService {
             throw new EntityNotFoundException("Can't find Nara Picture");
         }
 
-        return "picture not found";
+        System.out.println("bild fr fr nöd gfunde");
+
+        return "picture not available";
     }
 
     private String getTitle(String response) {
@@ -216,8 +227,7 @@ public class NaraService {
         String prodDate = StringUtils.substringBetween(response, beginMarker, endMarker);
 
         Gson gson = new Gson();
-        Type listType = new TypeToken<List<Map<String, Object>>>() {
-        }.getType();
+        Type listType = new TypeToken<List<Map<String, Object>>>() {}.getType();
 
         List<Map<String, Object>> yearJson = gson.fromJson(prodDate, listType);
 

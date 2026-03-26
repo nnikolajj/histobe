@@ -11,15 +11,15 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "GameSeed")
+@Table(name = "game_seed")
 @Getter
 @Setter
 @Data
 @Accessors(chain = true)
 public class GameSeed {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private UUID id;
 
     private List<String> histoId;
@@ -29,5 +29,8 @@ public class GameSeed {
     @Column(length = 6, unique = true, nullable = false)
     private String shortId;
 
+    private short state;
+
     private LocalDateTime date;
+
 }

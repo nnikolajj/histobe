@@ -37,4 +37,7 @@ public class HistoEntity {
 
     String title;
 
+    public String toString (){
+        return id + " " + category + " " + date + " " + endDate + " " + place + " " + title;
+    }
 }
