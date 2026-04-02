@@ -110,7 +110,7 @@ public class NaraService {
         String location = getLocation(title);
         String category;
 
-        title = StringUtils.substring(title, 100, title.length());
+        title = StringUtils.substring(title, 0, 150);
 
         if (location.length() >= 2){
             category = "2";
