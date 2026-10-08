@@ -49,15 +49,9 @@ public class NaraService {
     @Autowired
     NerLocationService nerLocationService;
 
-
-    /**
-     * Initialisiert den WebClient mit der Basis-URL und dem geheimen API Key im Header.
-     *
-     * @param builder Der WebClient.Builder (wird von Spring injiziert).
-     * @param apiKey  Der API Key, geladen aus application.properties.
-     */
     public NaraService(WebClient.Builder builder,
-                       @Value("${nara.api.key}") String apiKey, HandlerMapping resourceHandlerMapping) {
+                       @Value("${nara.api.key}") String apiKey,
+                       HandlerMapping resourceHandlerMapping) {
 
         // Setzt die Basis-URL auf den API-Wurzelpfad
         this.webClient = builder
@@ -70,12 +64,6 @@ public class NaraService {
         this.resourceHandlerMapping = resourceHandlerMapping;
     }
 
-    /**
-     * Führt eine Suche in der NARA API durch und filtert nach Datensätzen mit Digitalobjekten (Bildern).
-     *
-     * @param query Der Suchbegriff (z.B. "World War II")
-     * @return Den JSON-Body der API-Antwort als Mono<String>
-     */
     public HistoEntity searchRecordsWithImages(String query) {
 
         Random random = new Random();
@@ -94,7 +82,8 @@ public class NaraService {
                         .build())
                 .retrieve()
                 .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
-                        response -> Mono.error(new RuntimeException("NARA API Error: " + response.statusCode())))
+                        response -> Mono.error(
+                                new RuntimeException("NARA API Error: " + response.statusCode())))
                 .bodyToMono(String.class);
 
         mongo.subscribe(value -> System.out.println(),
@@ -183,8 +172,6 @@ public class NaraService {
             int urlEndIndex = response.indexOf(endMarker, urlStartIndex);
 
             if (urlEndIndex != -1) {
-
-                System.out.println("nutte: " + response.substring(urlStartIndex, urlEndIndex));
 
                 return response.substring(urlStartIndex, urlEndIndex);
             }

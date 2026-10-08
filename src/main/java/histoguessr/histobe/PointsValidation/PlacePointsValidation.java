@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 
 public class PlacePointsValidation {
+    private final int PLACE_POINTS = 25000;
+
     Logger logger = LoggerFactory.getLogger(PlacePointsValidation.class);
 
     public int validatePlace(String histoPlace, String validationPlace){
@@ -21,13 +23,11 @@ public class PlacePointsValidation {
 
             double distance = Math.sqrt(Math.abs(latPoints) * Math.abs(latPoints) + Math.abs(longPoints) * Math.abs(longPoints));
 
-            int placePoints = 25000;
-
-            if (placePoints - distance * 1000 < 0){
+            if (PLACE_POINTS - distance * 1000 < 0){
                 return 0;
             }
 
-            return (int) (placePoints - distance * 1000);
+            return (int) (PLACE_POINTS - distance * 1000);
         }
         else {
             logger.error("Invalid histoPlace {}. HistoPlace isn't the right coordinates Format of xx.xx, xx.xx ", histoPlace);
